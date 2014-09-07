@@ -1,0 +1,38 @@
+<head>
+    <link href='http://fonts.googleapis.com/css?family=Covered+By+Your+Grace|Oswald|Roboto+Condensed:700,300' rel='stylesheet' type='text/css'>
+    <title>Web Family</title>
+</head>
+<body>
+    {{> personinfo}}
+    {{> familytree}}
+</body>
+
+<template name="personinfo">
+  <h1 class="pageheader">{{headingname}}</h1>
+  <div class="personal_details">
+      <div class="pp_banner">Personliga detaljer</div>
+      <div class="perdata">
+          <span class="perdata_head">Fullständigt namn:</span>
+          <span class="perdata_info">{{fullname}}</span>
+      </div>
+      <div class="perdata">
+          <span class="perdata_head">Födelsekön:</span>
+          <span class="perdata_info">{{sex}}</span>
+      </div>
+      {{#each facts}}
+      {{> personFact}}
+      {{/each}}
+  </div>
+</template>
+
+<template name="personFact">
+  <div class="personFact">
+      <span class="fact_head">{{factname}}</span>
+      <span class="fact_data">{{factdata}}</span>
+  </div>
+</template>
+
+<template name="familytree">
+  <div class="familytree" id="familytree">
+  </div>
+</template>
