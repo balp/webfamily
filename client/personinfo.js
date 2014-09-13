@@ -10,9 +10,9 @@ function getCurrentPerson() {
 }
 Template.personinfo.rendered = function () {
     var id = Session.get("person");
-    console.log("Personinfo ID:", id);
+    //console.log("Personinfo ID:", id);
     var p = People.findOne({UserID:id.toString()});
-    console.log("Personinfo Person:", p);
+    //console.log("Personinfo Person:", p);
 }
 
 Template.personinfo.headingname = function() {
@@ -21,8 +21,8 @@ Template.personinfo.headingname = function() {
         return "...loading...";
     }
     var name = Names.findOne({PersonID:{ID:person.ID}});
-    console.log("Name", name);
-    drawTree();
+    //console.log("Name", name);
+    //drawTree();
     return name.Surname + ", " + name.Given;
 };
 Template.personinfo.fullname = function() {
@@ -113,7 +113,7 @@ birthLocation = function(person) {
     if(! birth) {
         return "...";
     }
-    console.log("birthLocation: birth ", birth);
+    //console.log("birthLocation: birth ", birth);
 
     return "" + birth.Place;
 }
@@ -173,7 +173,7 @@ function detailToString(detail) {
 }
 
 Template.personFact.factdata = function() {
-    console.log(this);
+    //console.log(this);
     return detailToString(this);
 };
 

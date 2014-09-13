@@ -8,7 +8,7 @@ function getParents(person) {
     var parents = [];
     var child = Children.find({PersonID:{ID:person.ID}});
     child.forEach( function(child) {
-	console.log("getParents: child", child);
+	//console.log("getParents: child", child);
 	if(child.Parent1Relation != undefined) {
 	    var parent = child.Parent1Relation.Relationship;
 	    var p = People.findOne({ID:parent.ParentID});
@@ -19,18 +19,18 @@ function getParents(person) {
 	    var p = People.findOne({ID:parent.ParentID});
 	    parents[parents.length] = p;
 	}
-	console.log("getParents: parents", parents);
+	//console.log("getParents: parents", parents);
 
     });
     return parents;
 }
 
-function buildPedogreeTree(person, depth) {
-    console.log("buildPedogreeTree:", person, " depth: ", depth);
+function buildPedogreeTree(person, generation) {
+    console.log("buildPedogreeTree:", person, " generation: ", generation);
     if(! person) {
-        console.log("buildPedogreeTree: empty tree");
+        //console.log("buildPedogreeTree: empty tree");
         return {
-          "name": "...",
+          "name": "",
           "born": '',
           "died": '',
           "location": "",
@@ -40,32 +40,33 @@ function buildPedogreeTree(person, depth) {
     var tree = {}
     var name = Names.findOne({PersonID:{ID:person.ID}});
     tree.name = name.Surname + ", " + name.Given ;
+    tree.person = person;
     tree.born = birthDate(person);
     tree.died = deathDate(person);
+    tree.generation = generation
     tree.location = birthLocation(person);
     var parents = [];
     getParents(person).forEach( function(parent) {
-	console.log("buildPedogreeTree: parents", parent);
-	if(depth < 3) {
-	    parents[parents.length] = buildPedogreeTree(parent, depth + 1);
+	//console.log("buildPedogreeTree: parents", parent);
+	if(generation < 3) {
+	    parents[parents.length] = buildPedogreeTree(parent, generation + 1);
 	}
     });
     tree.parents = parents;
 
-    console.log("buildPedogreeTree: tree", tree);
+    //console.log("buildPedogreeTree: tree", tree);
     return tree;
-    console.log("buildPedogreeTree: hardcoded tree");
 };
 
 function getCurrentPerson() {
     var id = Session.get("person");
-    console.log("ID:", id);
+    //console.log("ID:", id);
 
     if(id == undefined) {
         return undefined;
     }
     var p = People.findOne({UserID:id.toString()});
-    console.log("Person:", p);
+    //console.log("Person:", p);
     return p;
 }
 var margin = {top: 1, right: 250, bottom: 50, left: 10};
@@ -78,12 +79,12 @@ function elbow(d, i) {
 
 drawTree = function() {
     var id = Session.get("person");
-    console.log("ID:", id);
+    //console.log("ID:", id);
     var p = People.findOne({UserID:id.toString()});
-    console.log("Person:", p);
+    //console.log("Person:", p);
     var person = getCurrentPerson();
     var root = buildPedogreeTree(person, 0);
-    console.log("Familytree:", root);
+    //console.log("Familytree:", root);
 
     var diagonal = d3.svg.diagonal()
         .projection(function(d) { return [d.y, d.x]; });
@@ -95,7 +96,7 @@ drawTree = function() {
     var div_height = $("#familytree").height();
     var width = div_width - margin.left - margin.right;
     var height = div_height - margin.top - margin.bottom;
-    console.log("Size:" , div_width, div_height, width, height);
+    //console.log("Size:" , div_width, div_height, width, height);
     var pedigreeSVG = d3.select("#familytree")
         .append("svg")
         .attr("width", div_width)
@@ -105,7 +106,7 @@ drawTree = function() {
 
     var i = 0;
     var tree = d3.layout.tree()
-        .separation(function(a, b) { return a.parent === b.parent ? 1 : .8; })
+        .separation(function(a, b) { return a.parent === b.parent ? 1 : 1; })
         .children(function(d) { return d.parents; })
         .size([height, width]);
     var nodes = tree.nodes(root);
@@ -121,6 +122,12 @@ drawTree = function() {
 
     var nodeEnter = node.enter().append("g")
         .attr("class", "node")
+        .attr("id", function(d) {
+            if (d.person != undefined) {
+                return d.person.UserID
+            }
+            return "-1";
+        })
         .attr("transform", function(d) { 
             return "translate(" + d.y + "," + d.x + ")";
         });
@@ -153,4 +160,20 @@ drawTree = function() {
     link.enter().insert("path", "g")
         .attr("class", "link")
         .attr("d", diagonal);
-}
+};
+
+Template.familytree.rendered = function() {
+    console.log("familytree.rendered:");
+    Deps.autorun(function() {
+        console.log("familytree.rendered: autorun");
+        drawTree();
+    });
+};
+
+Template.familytree.events({
+    'click g.node':function(event, template){
+        console.log("ct id ", $(event.currentTarget).attr("id") );
+        Session.set("person", $(event.currentTarget).attr("id") );
+    }
+});
+

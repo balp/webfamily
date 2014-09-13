@@ -1,14 +1,15 @@
 text {
-  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-family: 'Roboto Condensed', sans-serif;
 }
 
 .name {
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .about {
   fill: #777;
   font-size: smaller;
+  font-weight: 500;
 }
 
 .link {
