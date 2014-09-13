@@ -8,6 +8,12 @@ function getCurrentPerson() {
     }
     return People.findOne({UserID:id.toString()});
 }
+Template.personinfo.rendered = function () {
+    var id = Session.get("person");
+    console.log("Personinfo ID:", id);
+    var p = People.findOne({UserID:id.toString()});
+    console.log("Personinfo Person:", p);
+}
 
 Template.personinfo.headingname = function() {
     var person = getCurrentPerson();
@@ -29,6 +35,7 @@ Template.personinfo.fullname = function() {
     }
     return name.Surname + ", " + name.Given ;
 };
+
 Template.personinfo.sex = function() {
     var person = getCurrentPerson();
     if(! person) {
@@ -74,6 +81,44 @@ function dateToString(date) {
     }
     return "---";
 };
+
+birthDate = function() {
+    var person = getCurrentPerson();
+    if(! person) {
+        return "";
+    }
+    var birth = PersonalFacts.findOne({ReferenceID:{ID:person.ID},Type:"Birth"});
+    if(! birth) {
+        return "";
+    }
+    return dateToString(birth.Date);
+}
+
+deathDate = function() {
+    var person = getCurrentPerson();
+    if(! person) {
+        return "";
+    }
+    var death = PersonalFacts.findOne({ReferenceID:{ID:person.ID},Type:"Death"});
+    if(! death) {
+        return "";
+    }
+    return dateToString(death.Date);
+}
+
+birthLocation = function() {
+    var person = getCurrentPerson();
+    if(! person) {
+        return "---";
+    }
+    var birth = PersonalFacts.findOne({ReferenceID:{ID:person.ID},Type:"Birth"});
+    if(! birth) {
+        return "...";
+    }
+    console.log("birthLocation: birth ", birth);
+
+    return "" + birth.Place;
+}
 
 Template.personinfo.born = function() {
     var person = getCurrentPerson();

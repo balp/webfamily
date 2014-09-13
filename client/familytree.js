@@ -4,6 +4,26 @@
 
 function buildPedogreeTree(person) {
     console.log("buildPedogreeTree:", person);
+    if(! person) {
+        console.log("buildPedogreeTree: empty tree");
+        return {
+          "name": "...",
+          "born": '',
+          "died": '',
+          "location": "",
+        }
+    }
+
+    var tree = {}
+    var name = Names.findOne({PersonID:{ID:person.ID}});
+    tree.name = name.Surname + ", " + name.Given ;
+    tree.born = birthDate();
+    tree.died = deathDate();
+    tree.location = birthLocation();
+
+    console.log("buildPedogreeTree: tree", tree);
+    return tree;
+    console.log("buildPedogreeTree: hardcoded tree");
 
     return {
   "name": "Clifford Shanks",
@@ -74,17 +94,20 @@ function elbow(d, i) {
        + (d.target.children ? "" : "h" + margin.right);
 }
 
-Template.familytree.rendered = function () {
+function drawTree() {
     var id = Session.get("person");
     console.log("ID:", id);
     var p = People.findOne({UserID:id.toString()});
     console.log("Person:", p);
     var person = getCurrentPerson();
     var root = buildPedogreeTree(person);
+    console.log("Familytree:", root);
 
     var diagonal = d3.svg.diagonal()
         .projection(function(d) { return [d.y, d.x]; });
     
+    d3.select("#familytree").select("svg").remove();
+
     var area = d3.select("#familytree");
     var div_width = $("#familytree").width();
     var div_height = $("#familytree").height();
@@ -146,4 +169,21 @@ Template.familytree.rendered = function () {
     link.enter().insert("path", "g")
         .attr("class", "link")
         .attr("d", diagonal);
+}
+
+Template.familytree.fullname = function() {
+    var person = getCurrentPerson();
+    drawTree();
+    if(! person) {
+        return "...loading...";
+    }
+    var name = Names.findOne({PersonID:{ID:person.ID}});
+    if( name.Title != undefined) {
+        return name.Surname + ", " + name.Given + "[" + name.Title + "]";
+    }
+    return name.Surname + ", " + name.Given ;
+};
+
+Template.familytree.rendered = function () {
+	drawTree();
 }
