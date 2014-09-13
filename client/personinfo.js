@@ -22,6 +22,7 @@ Template.personinfo.headingname = function() {
     }
     var name = Names.findOne({PersonID:{ID:person.ID}});
     console.log("Name", name);
+    drawTree();
     return name.Surname + ", " + name.Given;
 };
 Template.personinfo.fullname = function() {
@@ -82,8 +83,7 @@ function dateToString(date) {
     return "---";
 };
 
-birthDate = function() {
-    var person = getCurrentPerson();
+birthDate = function(person) {
     if(! person) {
         return "";
     }
@@ -94,8 +94,7 @@ birthDate = function() {
     return dateToString(birth.Date);
 }
 
-deathDate = function() {
-    var person = getCurrentPerson();
+deathDate = function(person) {
     if(! person) {
         return "";
     }
@@ -106,8 +105,7 @@ deathDate = function() {
     return dateToString(death.Date);
 }
 
-birthLocation = function() {
-    var person = getCurrentPerson();
+birthLocation = function(person) {
     if(! person) {
         return "---";
     }
@@ -142,12 +140,16 @@ function typeToString(type) {
     switch(type) {
         case "Birth":
             return "Född";
+        case "Death":
+            return "Död";
         case "Occupation":
             return "Sysselsättning";
         case "Residence":
             return "Bostad";
         case "Education":
             return "Utbildning";
+        case "Burial":
+            return "Begravning";
     }
     return type.toString();
 };
@@ -155,21 +157,23 @@ function typeToString(type) {
 Template.personFact.factname = function() {
     return typeToString(this.Type);
 }
+
+function detailToString(detail) {
+    var info = "";
+    if(detail.Date != undefined) {
+	info = dateToString(detail.Date);
+    }
+    if(detail.Place != undefined) {
+	info = info + " " + detail.Place.toString();
+    }
+    if(detail.Detail != undefined) {
+	info = info + " " + detail.Detail.toString();
+    }
+    return info;
+}
+
 Template.personFact.factdata = function() {
     console.log(this);
-    switch(this.Type) {
-        case "Birth":
-            if( this.Place != undefined) {
-                return dateToString(this.Date) + " " + this.Place.toString(); 
-            }
-            return dateToString(this.Date);
-        case "Occupation":
-            return dateToString(this.Date) + " " + this.Detail.toString();
-        case "Residence":
-            return dateToString(this.Date) + " " + this.Place.toString();
-        case "Education":
-            return dateToString(this.Date) + " " + this.Detail.toString();
-    }
-    return dateToString(this.Date) + "...";
+    return detailToString(this);
 };
 

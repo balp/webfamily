@@ -1,9 +1,32 @@
 //People = new Meteor.Collection("people");
 //Names = new Meteor.Collection("names");
 //PersonalFacts = new Meteor.Collection("personalfacts");
+Children = new Meteor.Collection("children");
 
-function buildPedogreeTree(person) {
-    console.log("buildPedogreeTree:", person);
+
+function getParents(person) {
+    var parents = [];
+    var child = Children.find({PersonID:{ID:person.ID}});
+    child.forEach( function(child) {
+	console.log("getParents: child", child);
+	if(child.Parent1Relation != undefined) {
+	    var parent = child.Parent1Relation.Relationship;
+	    var p = People.findOne({ID:parent.ParentID});
+	    parents[parents.length] = p;
+	}
+	if(child.Parent2Relation != undefined) {
+	    var parent = child.Parent2Relation.Relationship;
+	    var p = People.findOne({ID:parent.ParentID});
+	    parents[parents.length] = p;
+	}
+	console.log("getParents: parents", parents);
+
+    });
+    return parents;
+}
+
+function buildPedogreeTree(person, depth) {
+    console.log("buildPedogreeTree:", person, " depth: ", depth);
     if(! person) {
         console.log("buildPedogreeTree: empty tree");
         return {
@@ -17,64 +40,23 @@ function buildPedogreeTree(person) {
     var tree = {}
     var name = Names.findOne({PersonID:{ID:person.ID}});
     tree.name = name.Surname + ", " + name.Given ;
-    tree.born = birthDate();
-    tree.died = deathDate();
-    tree.location = birthLocation();
+    tree.born = birthDate(person);
+    tree.died = deathDate(person);
+    tree.location = birthLocation(person);
+    var parents = [];
+    getParents(person).forEach( function(parent) {
+	console.log("buildPedogreeTree: parents", parent);
+	if(depth < 3) {
+	    parents[parents.length] = buildPedogreeTree(parent, depth + 1);
+	}
+    });
+    tree.parents = parents;
 
     console.log("buildPedogreeTree: tree", tree);
     return tree;
     console.log("buildPedogreeTree: hardcoded tree");
-
-    return {
-  "name": "Clifford Shanks",
-  "born": 1862,
-  "died": 1906,
-  "location": "Petersburg, VA",
-  "parents": [
-    {
-      "name": "James Shanks",
-      "born": 1831,
-      "died": 1884,
-      "location": "Petersburg, VA",
-      "parents": [
-        {
-          "name": "Robert Shanks",
-          "born": 1781,
-          "died": 1871,
-          "location": "Ireland/Petersburg, VA"
-        },
-        {
-          "name": "Elizabeth Shanks",
-          "born": 1795,
-          "died": 1871,
-          "location": "Ireland/Petersburg, VA"
-        }
-      ]
-    },
-    {
-      "name": "Ann Emily Brown",
-      "born": 1826,
-      "died": 1866,
-      "location": "Brunswick/Petersburg, VA",
-      "parents": [
-        {
-          "name": "Henry Brown",
-          "born": 1792,
-          "died": 1845,
-          "location": "Montgomery, NC"
-        },
-        {
-          "name": "Sarah Houchins",
-          "born": 1793,
-          "died": 1882,
-          "location": "Montgomery, NC"
-        }
-      ]
-    }
-  ]
-}
-        
 };
+
 function getCurrentPerson() {
     var id = Session.get("person");
     console.log("ID:", id);
@@ -86,7 +68,7 @@ function getCurrentPerson() {
     console.log("Person:", p);
     return p;
 }
-var margin = {top: 1, right: 150, bottom: 1, left: 10};
+var margin = {top: 1, right: 250, bottom: 50, left: 10};
 
 function elbow(d, i) {
   return "M" + d.source.y + "," + d.source.x
@@ -94,13 +76,13 @@ function elbow(d, i) {
        + (d.target.children ? "" : "h" + margin.right);
 }
 
-function drawTree() {
+drawTree = function() {
     var id = Session.get("person");
     console.log("ID:", id);
     var p = People.findOne({UserID:id.toString()});
     console.log("Person:", p);
     var person = getCurrentPerson();
-    var root = buildPedogreeTree(person);
+    var root = buildPedogreeTree(person, 0);
     console.log("Familytree:", root);
 
     var diagonal = d3.svg.diagonal()
@@ -123,7 +105,7 @@ function drawTree() {
 
     var i = 0;
     var tree = d3.layout.tree()
-        .separation(function(a, b) { return a.parent === b.parent ? 1 : .5; })
+        .separation(function(a, b) { return a.parent === b.parent ? 1 : .8; })
         .children(function(d) { return d.parents; })
         .size([height, width]);
     var nodes = tree.nodes(root);
@@ -146,6 +128,8 @@ function drawTree() {
         .attr("class", "name")
         .attr("x", 8)
         .attr("y", -6)
+        .attr("textLength", 200)
+        .attr("lengthAdjust", "spacingAndGlyphs")
         .text(function(d) { return d.name; });
 
     node.append("text")
@@ -169,21 +153,4 @@ function drawTree() {
     link.enter().insert("path", "g")
         .attr("class", "link")
         .attr("d", diagonal);
-}
-
-Template.familytree.fullname = function() {
-    var person = getCurrentPerson();
-    drawTree();
-    if(! person) {
-        return "...loading...";
-    }
-    var name = Names.findOne({PersonID:{ID:person.ID}});
-    if( name.Title != undefined) {
-        return name.Surname + ", " + name.Given + "[" + name.Title + "]";
-    }
-    return name.Surname + ", " + name.Given ;
-};
-
-Template.familytree.rendered = function () {
-	drawTree();
 }
